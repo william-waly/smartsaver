@@ -1,47 +1,48 @@
 package com.dnb.smartsaver
 
+import androidx.compose.foundation.layout.fillMaxSize
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.dnb.smartsaver.ui.theme.SmartSaverTheme
+import com.dnb.smartsaver.model.SavingsGoal
+import com.dnb.smartsaver.ui.GoalDetailScreen
+import com.dnb.smartsaver.ui.HomeScreen
+import com.dnb.smartsaver.ui.NewGoalScreen
+
+sealed class Screen {
+    object Home : Screen()
+    data class Detail(val goal: SavingsGoal) : Screen()
+    object NewGoal : Screen()
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            SmartSaverTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            MaterialTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+
+                    when (val screen = currentScreen) {
+                        is Screen.Home -> HomeScreen(
+                            onGoalClick = { goal -> currentScreen = Screen.Detail(goal) },
+                            onAddGoalClick = { currentScreen = Screen.NewGoal }
+                        )
+                        is Screen.Detail -> GoalDetailScreen(
+                            goal = screen.goal,
+                            onBackClick = { currentScreen = Screen.Home }
+                        )
+                        is Screen.NewGoal -> NewGoalScreen(
+                            onBackClick = { currentScreen = Screen.Home },
+                            onSaveClick = { _, _, _ -> currentScreen = Screen.Home }
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SmartSaverTheme {
-        Greeting("Android")
     }
 }
