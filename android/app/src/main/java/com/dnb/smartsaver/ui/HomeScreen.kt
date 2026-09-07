@@ -5,15 +5,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dnb.smartsaver.model.SavingsGoal
-import com.dnb.smartsaver.model.sampleGoals
+import com.dnb.smartsaver.viewmodel.GoalsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onGoalClick: (SavingsGoal) -> Unit, onAddGoalClick: () -> Unit) {
+fun HomeScreen(
+    onGoalClick: (SavingsGoal) -> Unit,
+    onAddGoalClick: () -> Unit,
+    viewModel: GoalsViewModel = viewModel()
+) {
+    LaunchedEffect(Unit) {
+        viewModel.loadGoals(accountId = 1) // midlertidig hardkodet til konto 1
+    }
+
     Scaffold(
         topBar = { TopAppBar(title = { Text("Mine sparemål") }) },
         floatingActionButton = {
@@ -22,14 +32,27 @@ fun HomeScreen(onGoalClick: (SavingsGoal) -> Unit, onAddGoalClick: () -> Unit) {
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(sampleGoals) { goal ->
-                GoalCard(goal = goal, onClick = { onGoalClick(goal) })
+        Box(modifier = Modifier.padding(padding)) {
+            when {
+                viewModel.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                viewModel.errorMessage != null -> {
+                    Text(
+                        viewModel.errorMessage ?: "",
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(viewModel.goals) { goal ->
+                            GoalCard(goal = goal, onClick = { onGoalClick(goal) })
+                        }
+                    }
+                }
             }
         }
     }
